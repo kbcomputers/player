@@ -1,10 +1,10 @@
 {
   "name": "@kbco/player",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A easy player for streaming video",
   "main": "index.js",
   "bin": {
-    "kbco-player": "./index.js"
+    "kbco-player": "./bin/kbco-player.js"
   },
   "repository": "kbcomputers/player",
   "dependencies": {
