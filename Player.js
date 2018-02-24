@@ -1,10 +1,10 @@
 const path = require('path');
 const Finder = require('fs-finder');
-const express = require('express')
-const app = express()
+const express = require('express');
+const app = express();
 const router = require('@kbco/router')(app);
-const edge = require('edge.js')
-
+const edge = require('edge.js');
+const fs = require('fs');
 edge.registerViews(path.join(__dirname, './views'))
 
 module.exports = function () {
@@ -15,59 +15,71 @@ module.exports = function () {
     
     let pathToIndex = path.normalize(directory)
 
-    let files = Finder.from(pathToIndex).findFiles('*.mp4').map(file => {
+    let files = Finder.from(pathToIndex).findFiles('*.mp4').map((file, id) => {
+        let name = path.basename(file);
+        
+        let [showname1, showname2, episode] = name.split(' ');
+        
+        let friendly_name = name.split(' - ')[1].split('.')[0];
+        
         return {
-            name: path.basename(file),
+            id,
+            name,
             path: file,
-            encrypt: Buffer.from(file).toString('base64')
+            showname: showname1 + ' ' + showname2,
+            episode,
+            encrypt: Buffer.from(file).toString('base64'),
+            watched: false,
+            friendly_name
         }}).sort(function(a, b){
-        if(a.name < b.name) return -1;
-        if(a.name > b.name) return 1;
-        return 0;
-    });
+            if(a.name < b.name) return -1;
+            if(a.name > b.name) return 1;
+            return 0;
+        })
+        .map((file, id_) => {
+            return Object.assign(file, {id_});
+        })
 
     router.get('/', (req, res) => {
-        return edge.render('welcome', { files });
+        return edge.render('welcome', { files: JSON.stringify(files) });
     });
-    
-    router.get('/v/:id', (req, res) => {
-        var file = path.resolve(Buffer.from(req.params.id, 'base64').toString('ascii'));
-        fs.stat(file, function(err, stats) {
-          if (err) {
-            if (err.code === 'ENOENT') {
-              // 404 Error if file not found
-              return res.sendStatus(404);
+    router.post('update/:id', (req, res) => {
+        for(file in files) {
+            console.log(files[file].id, req.params.id)
+            if (files[file].id == req.params.id) {
+                files[file].watched = true;
             }
-          res.end(err);
-          }
-          var range = req.headers.range;
-          if (!range) {
-           // 416 Wrong range
-           return res.sendStatus(416);
-          }
-          var positions = range.replace(/bytes=/, "").split("-");
-          var start = parseInt(positions[0], 10);
-          var total = stats.size;
-          var end = positions[1] ? parseInt(positions[1], 10) : total - 1;
-          var chunksize = (end - start) + 1;
-    
-          res.writeHead(206, {
-            "Content-Range": "bytes " + start + "-" + end + "/" + total,
-            "Accept-Ranges": "bytes",
-            "Content-Length": chunksize,
-            "Content-Type": "video/mp4"
-          });
-    
-          var stream = fs.createReadStream(file, { start: start, end: end })
-            .on("open", function() {
-              stream.pipe(res);
-            }).on("error", function(err) {
-              res.end(err);
-            });
-        });
+        }
+        
+        return [];
     });
     
-    app.listen(3000, function() {
-        console.log('Example app listening on port 3000!');
+    app.get('/v/:id', (req, res) => {
+        var file = path.resolve(Buffer.from(req.params.id, 'base64').toString('ascii'));
+        var stat = fs.statSync(file);
+        var total = stat.size;
+        if (req.headers['range']) {
+            var range = req.headers.range;
+            var parts = range.replace(/bytes=/, "").split("-");
+            var partialstart = parts[0];
+            var partialend = parts[1];
+        
+            var start = parseInt(partialstart, 10);
+            var end = partialend ? parseInt(partialend, 10) : total-1;
+            var chunksize = (end-start)+1;
+        
+            var file = fs.createReadStream(file, {start: start, end: end});
+            res.writeHead(206, { 'Content-Range': 'bytes ' + start + '-' + end + '/' + total, 'Accept-Ranges': 'bytes', 'Content-Length': chunksize, 'Content-Type': 'video/mp4' });
+            file.pipe(res);
+        } else {
+            res.writeHead(200, { 'Content-Length': total, 'Content-Type': 'video/mp4' });
+            fs.createReadStream(file).pipe(res);
+        }
+    });
+    
+    let port = this.option('port')[0] || 3000;
+    
+    app.listen(port, function() {
+        console.log('Player listening on port ' + port);
     });
 }

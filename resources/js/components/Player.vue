@@ -51,6 +51,8 @@
             selectVideo(file, i) {
                 this.selectedVideo = i;
                 
+                this.current_file = file;
+                
                 this.ready = false;
                 
                 this.updateTheVideo(file);
