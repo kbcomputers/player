@@ -8,6 +8,11 @@ const fs = require('fs');
 edge.registerViews(path.join(__dirname, './views'))
 
 module.exports = function () {
+    if (!this.argument('directory')) {
+        console.log('You must supply a directory as the first parameter.')
+        process.exit();
+    }
+    
     let directory = this.argument('directory');
     if (!directory.startsWith('/')) {
         directory = process.cwd()  + '/' + directory;
