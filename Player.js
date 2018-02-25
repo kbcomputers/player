@@ -50,7 +50,6 @@ module.exports = function () {
     });
     router.post('update/:id', (req, res) => {
         for(file in files) {
-            console.log(files[file].id, req.params.id)
             if (files[file].id == req.params.id) {
                 files[file].watched = true;
             }
