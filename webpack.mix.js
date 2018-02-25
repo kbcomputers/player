@@ -12,7 +12,7 @@ var path = require('path');
  |
  */
 
-mix.js('resources/js/app.js', 'js')
+mix.js('resources/js/app.js', 'public/js')
     .webpackConfig({
         devServer: {
             https: false,

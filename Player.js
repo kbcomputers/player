@@ -6,6 +6,7 @@ const router = require('@kbco/router')(app);
 const edge = require('edge.js');
 const fs = require('fs');
 edge.registerViews(path.join(__dirname, './views'))
+app.use(express.static(path.join(__dirname, './public')));
 
 module.exports = function () {
     if (!this.argument('directory')) {
