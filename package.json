@@ -1,6 +1,6 @@
 {
   "name": "@kbco/player",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "A easy player for streaming video",
   "main": "index.js",
   "bin": {
